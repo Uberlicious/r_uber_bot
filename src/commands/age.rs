@@ -1,5 +1,8 @@
+use crate::{Context, Error};
+use poise::serenity_prelude as serenity;
+
 #[poise::command(slash_command, prefix_command)]
-async fn age(
+pub async fn age(
     ctx: Context<'_>,
     #[description = "Selected user"] user: Option<serenity::User>,
 ) -> Result<(), Error> {
