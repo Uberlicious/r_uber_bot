@@ -1,9 +1,19 @@
+use rand::{rngs::StdRng, Rng, SeedableRng};
+use regex::RegexSet;
 use std::sync::atomic::Ordering;
 
 use poise::serenity_prelude::{self as serenity, MessageBuilder};
 
 use crate::{Data, Error};
 use poise::Event;
+
+fn gardy_check(message: String) -> bool {
+    let set = RegexSet::new(&[r"gardy.?time", r"tobey.?time", r"grady.?time"]).unwrap();
+
+    let matches: Vec<_> = set.matches(message.as_str()).into_iter().collect();
+
+    matches.len() > 0
+}
 
 pub async fn event_handler(
     ctx: &serenity::Context,
@@ -17,21 +27,17 @@ pub async fn event_handler(
         }
 
         Event::Message { new_message } => 'early: {
-            println!("new message received: {:?}", new_message.content);
-            if new_message.content.to_lowercase().contains("reply poise") {
-                let mentions = data.poise_mentions.load(Ordering::SeqCst) + 1;
-                data.poise_mentions.store(mentions, Ordering::SeqCst);
-                new_message
-                    .reply(
-                        ctx,
-                        format!("This command has been been mentioned {} times", mentions),
-                    )
-                    .await?;
-
+            if new_message.author.bot {
                 break 'early;
             }
 
-            if new_message.content.to_lowercase().contains("poise") {
+            if gardy_check(new_message.content.to_lowercase()) {
+                let mut rng = StdRng::from_entropy();
+
+                if !rng.gen_ratio(1, 4) {
+                    break 'early;
+                }
+
                 let _channel = match new_message.channel_id.to_channel(&ctx).await {
                     Ok(channel) => channel,
                     Err(why) => {
