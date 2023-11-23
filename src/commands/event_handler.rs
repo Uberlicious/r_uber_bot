@@ -1,8 +1,9 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use regex::RegexSet;
+use serde_json::json;
 use std::sync::atomic::Ordering;
 
-use poise::serenity_prelude::{self as serenity, MessageBuilder};
+use poise::serenity_prelude::{self as serenity, Attachment, MessageBuilder};
 
 use crate::{Data, Error};
 use poise::Event;
@@ -34,9 +35,13 @@ pub async fn event_handler(
             if gardy_check(new_message.content.to_lowercase()) {
                 let mut rng = StdRng::from_entropy();
 
-                if !rng.gen_ratio(1, 4) {
-                    break 'early;
-                }
+                println!("gardy time: {}", data.gardy_count.load(Ordering::SeqCst));
+                // if !rng.gen_ratio(1, 4) {
+                //     break 'early;
+                // }
+
+                let count = data.gardy_count.load(Ordering::SeqCst) + 1;
+                data.gardy_count.store(count, Ordering::SeqCst);
 
                 let _channel = match new_message.channel_id.to_channel(&ctx).await {
                     Ok(channel) => channel,
@@ -47,9 +52,14 @@ pub async fn event_handler(
                     }
                 };
 
-                let content = MessageBuilder::new().push("user p'd").build();
+                let client =
+                    giphy_api::Client::new(String::from("WlUS2Sd7uP61mfO02n3SUS8oUISZOF2b"));
 
-                if let Err(why) = new_message.channel_id.say(&ctx.http, content).await {
+                let giphy_response = client.gifs().random("time", "").await?;
+
+                let gif = giphy_response.body.data.expect("no data");
+
+                if let Err(why) = new_message.channel_id.say(&ctx.http, gif.url).await {
                     println!("Error sending message: {:?}", why)
                 };
 

@@ -1,13 +1,16 @@
 use std::env;
 use std::sync::atomic::AtomicU32;
 
+use giphy_api;
+
 use poise::serenity_prelude as serenity;
 
 mod commands;
-use commands::{age, event_handler};
+use commands::{age, event_handler, gardy_count};
 
 pub struct Data {
-    poise_mentions: AtomicU32,
+    giphy: giphy_api::Client,
+    gardy_count: AtomicU32,
 }
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -24,9 +27,11 @@ async fn main() {
         ..Default::default()
     };
 
+    let giphy_client = giphy_api::Client::new_from_env();
+
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![age()],
+            commands: vec![age(), gardy_count()],
             ..Default::default()
         })
         .token(env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN"))
@@ -37,7 +42,8 @@ async fn main() {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
-                    poise_mentions: AtomicU32::new(0),
+                    giphy: giphy_client,
+                    gardy_count: AtomicU32::new(0),
                 })
             })
         })
