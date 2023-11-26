@@ -9,8 +9,9 @@ mod commands;
 use commands::{age, event_handler, gardy_count};
 
 pub struct Data {
-    gardy_count: AtomicU32,
     giphy_api: AsyncApi,
+    gardy_count: AtomicU32,
+    luxe_count: AtomicU32,
 }
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -43,6 +44,7 @@ async fn main() {
                 Ok(Data {
                     giphy_api: api,
                     gardy_count: AtomicU32::new(0),
+                    luxe_count: AtomicU32::new(0),
                 })
             })
         });
