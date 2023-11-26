@@ -1,12 +1,12 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use regex::RegexSet;
-use serde_json::json;
-use std::{sync::atomic::Ordering, env};
 
-use giphy::v1::r#async::*;
+use std::sync::atomic::Ordering;
+
 use giphy::v1::gifs::RandomRequest;
+use giphy::v1::r#async::RunnableAsyncRequest;
 
-use poise::serenity_prelude::{self as serenity, Attachment, MessageBuilder};
+use poise::serenity_prelude::{self as serenity};
 
 use crate::{Data, Error};
 use poise::Event;
@@ -38,10 +38,9 @@ pub async fn event_handler(
             if gardy_check(new_message.content.to_lowercase()) {
                 let mut rng = StdRng::from_entropy();
 
-                println!("gardy time: {}", data.gardy_count.load(Ordering::SeqCst));
-                // if !rng.gen_ratio(1, 4) {
-                //     break 'early;
-                // }
+                if !rng.gen_ratio(1, 4) {
+                    break 'early;
+                }
 
                 let count = data.gardy_count.load(Ordering::SeqCst) + 1;
                 data.gardy_count.store(count, Ordering::SeqCst);
@@ -55,16 +54,16 @@ pub async fn event_handler(
                     }
                 };
 
-                let api_key = env::var("GIPHY_API_KEY").unwrap_or_else(|e| panic!("error retrieving env variable: {:?}", e));
-                let client = reqwest::Client::new();
-                let api = AsyncApi::new(api_key, client);
-
                 let response = RandomRequest::new()
                     .with_tag("time")
-                    .send_to(&api)
-                    .await?;        
+                    .send_to(&data.giphy_api)
+                    .await?;
 
-                if let Err(why) = new_message.channel_id.say(&ctx.http, response.data.embed_url).await {
+                if let Err(why) = new_message
+                    .channel_id
+                    .say(&ctx.http, response.data.embed_url)
+                    .await
+                {
                     println!("Error sending message: {:?}", why);
                 };
 
