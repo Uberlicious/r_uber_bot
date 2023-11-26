@@ -1,7 +1,10 @@
 use rand::{rngs::StdRng, Rng, SeedableRng};
 use regex::RegexSet;
 use serde_json::json;
-use std::sync::atomic::Ordering;
+use std::{sync::atomic::Ordering, env};
+
+use giphy::v1::r#async::*;
+use giphy::v1::gifs::RandomRequest;
 
 use poise::serenity_prelude::{self as serenity, Attachment, MessageBuilder};
 
@@ -52,15 +55,17 @@ pub async fn event_handler(
                     }
                 };
 
-                let client =
-                    giphy_api::Client::new(String::from("WlUS2Sd7uP61mfO02n3SUS8oUISZOF2b"));
+                let api_key = env::var("GIPHY_API_KEY").unwrap_or_else(|e| panic!("error retrieving env variable: {:?}", e));
+                let client = reqwest::Client::new();
+                let api = AsyncApi::new(api_key, client);
 
-                let giphy_response = client.gifs().random("time", "").await?;
+                let response = RandomRequest::new()
+                    .with_tag("time")
+                    .send_to(&api)
+                    .await?;        
 
-                let gif = giphy_response.body.data.expect("no data");
-
-                if let Err(why) = new_message.channel_id.say(&ctx.http, gif.url).await {
-                    println!("Error sending message: {:?}", why)
+                if let Err(why) = new_message.channel_id.say(&ctx.http, response.data.embed_url).await {
+                    println!("Error sending message: {:?}", why);
                 };
 
                 break 'early;

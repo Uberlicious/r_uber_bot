@@ -1,15 +1,13 @@
 use std::env;
 use std::sync::atomic::AtomicU32;
 
-use giphy_api;
-
 use poise::serenity_prelude as serenity;
 
 mod commands;
 use commands::{age, event_handler, gardy_count};
 
 pub struct Data {
-    giphy: giphy_api::Client,
+    // giphy: giphy_api::Client,
     gardy_count: AtomicU32,
 }
 
@@ -27,8 +25,6 @@ async fn main() {
         ..Default::default()
     };
 
-    let giphy_client = giphy_api::Client::new_from_env();
-
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![age(), gardy_count()],
@@ -42,7 +38,7 @@ async fn main() {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
-                    giphy: giphy_client,
+                    // giphy: giphy_client,
                     gardy_count: AtomicU32::new(0),
                 })
             })
