@@ -5,8 +5,10 @@ use giphy::v1::r#async::*;
 
 use poise::serenity_prelude as serenity;
 
-mod commands;
-use commands::{age, event_handler, gardy_count};
+pub mod commands;
+use commands::*;
+
+pub mod superheroapi;
 
 pub struct Data {
     giphy_api: AsyncApi,
@@ -28,7 +30,7 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![age(), gardy_count()],
+            commands: vec![age(), gardy_count(), get_superhero()],
             event_handler: |_ctx, event, _framework, _data| {
                 Box::pin(event_handler(_ctx, event, _framework, _data))
             },
