@@ -1,37 +1,38 @@
-use crate::superhero_api::get_random_superhero;
-use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::Color;
 
+use crate::superhero_api::get_random_superhero;
+
+use crate::superhero_api::model::Powerstats;
 use crate::{Context, Error};
 
 #[poise::command(slash_command)]
 pub async fn get_superhero(ctx: Context<'_>) -> Result<(), Error> {
     let response = get_random_superhero().await?;
-    println!("{:?}", response);
 
     let stats = &response.powerstats;
-    // let overall = usize::try_from(stats.intelligence).unwrap();
-    let overall = "200".to_string();
-    let blank = "".to_string();
 
     let fields = vec![
-        ("Hero", &response.name, true),
-        ("Intelligence", &stats.intelligence, true),
-        ("Strength", &stats.strength, true),
-        ("Speed", &stats.speed, true),
-        ("Durability", &stats.durability, true),
-        ("Power", &stats.power, true),
-        ("Combat", &stats.combat, true),
-        ("", &blank, true),
-        ("Overall", &overall, true),
+        ("Intelligence", stats.intelligence.to_string(), true),
+        ("Strength", stats.strength.to_string(), true),
+        ("Speed", stats.speed.to_string(), true),
+        ("Durability", stats.durability.to_string(), true),
+        ("Power", stats.power.to_string(), true),
+        ("Combat", stats.combat.to_string(), true),
     ];
 
-    // let title =
+    let mut color: Color = Color::DARK_GREEN;
+    if response.biography.alignment == "bad" {
+        color = Color::DARK_RED;
+    }
 
     let _reply = ctx
         .send(|b| {
             b.embed(|b| {
-                b.title(&ctx.author().name)
+                b.title(&response.name)
+                    .color(color)
                     .fields(fields)
+                    .field("", "---------------------------------------", false)
+                    .field("Overall", Powerstats::overall(stats), true)
                     .image(&response.image.url)
             })
         })

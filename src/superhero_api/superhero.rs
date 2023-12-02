@@ -1,6 +1,7 @@
 use crate::Error;
 
 use super::Superhero;
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use regex::Regex;
 
 pub async fn get_num_ids() -> Result<usize, Error> {
@@ -17,12 +18,16 @@ pub async fn get_num_ids() -> Result<usize, Error> {
 }
 
 pub async fn get_random_superhero() -> Result<Superhero, Error> {
-    let superhero = reqwest::get("https://superheroapi.com/api/10158934816710166/731")
-        .await?
-        .json::<Superhero>()
-        .await?;
+    let mut rng = StdRng::from_entropy();
 
-    println!("{:?}", superhero);
+    let total = get_num_ids().await?;
+
+    let num = rng.gen_range(0..=total);
+
+    let url =
+        "https://superheroapi.com/api/10158934816710166/".to_owned() + num.to_string().as_str();
+
+    let superhero = reqwest::get(url).await?.json::<Superhero>().await?;
 
     Ok(superhero)
 }

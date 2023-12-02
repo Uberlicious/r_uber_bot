@@ -1,5 +1,8 @@
+use serde_aux::prelude::*;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
+
+use super::deserialize_number_from_string_or_default;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,12 +21,62 @@ pub struct Superhero {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Powerstats {
-    pub intelligence: String,
-    pub strength: String,
-    pub speed: String,
-    pub durability: String,
-    pub power: String,
-    pub combat: String,
+    #[serde(
+        default = "default_num",
+        deserialize_with = "deserialize_number_from_string_or_default"
+    )]
+    pub intelligence: u32,
+
+    #[serde(
+        default = "default_num",
+        deserialize_with = "deserialize_number_from_string_or_default"
+    )]
+    pub strength: u32,
+
+    #[serde(
+        default = "default_num",
+        deserialize_with = "deserialize_number_from_string_or_default"
+    )]
+    pub speed: u32,
+
+    #[serde(
+        default = "default_num",
+        deserialize_with = "deserialize_number_from_string_or_default"
+    )]
+    pub durability: u32,
+
+    #[serde(
+        default = "default_num",
+        deserialize_with = "deserialize_number_from_string_or_default"
+    )]
+    pub power: u32,
+
+    #[serde(
+        default = "default_num",
+        deserialize_with = "deserialize_number_from_string_or_default"
+    )]
+    pub combat: u32,
+}
+
+fn default_num() -> u32 {
+    0
+}
+
+impl Powerstats {
+    pub fn as_array(&self) -> [u32; 6] {
+        [
+            self.intelligence,
+            self.strength,
+            self.speed,
+            self.durability,
+            self.power,
+            self.combat,
+        ]
+    }
+
+    pub fn overall(&self) -> u32 {
+        self.as_array().iter().sum()
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
