@@ -8,7 +8,7 @@ use poise::serenity_prelude as serenity;
 pub mod commands;
 use commands::*;
 
-pub mod superheroapi;
+pub mod superhero_api;
 
 pub struct Data {
     giphy_api: AsyncApi,
