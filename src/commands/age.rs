@@ -3,7 +3,8 @@ use std::sync::atomic::Ordering;
 use crate::{Context, Error};
 use poise::serenity_prelude as serenity;
 
-#[poise::command(slash_command, prefix_command)]
+// check when a user was created
+#[poise::command(prefix_command, slash_command, track_edits)]
 pub async fn age(
     ctx: Context<'_>,
     #[description = "Selected user"] user: Option<serenity::User>,
@@ -14,10 +15,11 @@ pub async fn age(
     Ok(())
 }
 
-#[poise::command(slash_command, prefix_command)]
+// check how many times gardy time has occurred
+#[poise::command(slash_command, ephemeral)]
 pub async fn gardy_count(ctx: Context<'_>) -> Result<(), Error> {
     let count = ctx.data().gardy_count.load(Ordering::SeqCst);
-    let response = format!("Gardy time has been triggered {} times", count);
+    let response = format!("Gardy time has been triggered {count} times");
     ctx.say(response).await?;
     Ok(())
 }

@@ -1,7 +1,6 @@
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
 
-use poise::serenity_prelude::futures::future::ok;
 use serde::{Deserialize, Deserializer};
 
 pub fn deserialize_number_from_string_or_default<'de, T, D>(deserializer: D) -> Result<T, D::Error>

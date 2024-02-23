@@ -1,7 +1,10 @@
 use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
 use regex::RegexSet;
 
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::{
+    any::Any,
+    sync::atomic::{AtomicU32, Ordering},
+};
 
 use giphy::v1::gifs::RandomRequest;
 use giphy::v1::r#async::RunnableAsyncRequest;
@@ -9,7 +12,6 @@ use giphy::v1::r#async::RunnableAsyncRequest;
 use poise::serenity_prelude::{self as serenity, Message};
 
 use crate::{Data, Error};
-use poise::Event;
 
 fn trigger_check(message: String, set: &RegexSet) -> bool {
     let matches: Vec<_> = set.matches(message.as_str()).into_iter().collect();
@@ -53,16 +55,12 @@ async fn friend_trigger(
 
 pub async fn event_handler(
     ctx: &serenity::Context,
-    event: &Event<'_>,
+    event: &serenity::FullEvent,
     _framework: poise::FrameworkContext<'_, Data, Error>,
     data: &Data,
 ) -> Result<(), Error> {
     match event {
-        Event::Ready { data_about_bot } => {
-            println!("Logged in as {}", data_about_bot.user.name);
-        }
-
-        Event::Message { new_message } => 'early: {
+        serenity::FullEvent::Message { new_message } => 'early: {
             if new_message.author.bot {
                 break 'early;
             }
@@ -72,7 +70,7 @@ pub async fn event_handler(
                 ctx,
                 new_message,
                 data,
-                &RegexSet::new(&[r"gardy.?time", r"grady.?time", r"tobey.?time"]).unwrap(),
+                &RegexSet::new([r"gardy.?time", r"grady.?time", r"tobey.?time"]).unwrap(),
                 vec!["time"],
                 Some(&data.gardy_count),
             )
@@ -83,7 +81,7 @@ pub async fn event_handler(
                 ctx,
                 new_message,
                 data,
-                &RegexSet::new(&[r"luxe.?time"]).unwrap(),
+                &RegexSet::new([r"luxe.?time"]).unwrap(),
                 vec!["bathroom", "shower"],
                 Some(&data.luxe_count),
             )
