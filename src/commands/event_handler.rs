@@ -1,10 +1,7 @@
 use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
 use regex::RegexSet;
 
-use std::{
-    any::Any,
-    sync::atomic::{AtomicU32, Ordering},
-};
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use giphy::v1::gifs::RandomRequest;
 use giphy::v1::r#async::RunnableAsyncRequest;
