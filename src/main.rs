@@ -56,6 +56,7 @@ async fn main() {
             commands::age::gardy_count(),
             commands::superhero::get_superhero(),
             commands::superhero::super_duel(),
+            commands::role_assign::create_role_assign(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("u!".into()),

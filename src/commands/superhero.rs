@@ -58,15 +58,24 @@ pub async fn get_superhero(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(slash_command, reuse_response)]
 pub async fn super_duel(
     ctx: Context<'_>,
-    #[description = "Who do you want to challenge?"] competitor: serenity::User,
+    #[description = "Who do you want to challenge?"] competitor: Option<serenity::User>,
 ) -> Result<(), Error> {
     let uuid_duel = ctx.id();
 
-    let response = format!(
-        "{} has challenged {} to a test of fates!",
-        ctx.author(),
-        competitor
-    );
+    let response: String;
+
+    match competitor {
+        Some(ref c) => {
+            response = format!("{} has challenged {} to a test of fates!", ctx.author(), c)
+        }
+        None => {
+            response = format!(
+                "{} has put forth a challenge to anyone brave enough!",
+                ctx.author()
+            )
+        }
+    }
+
     let mut duration: u64 = 5;
 
     let msg = ctx
@@ -81,7 +90,7 @@ pub async fn super_duel(
             .channel_id(ctx.channel_id())
             .timeout(std::time::Duration::from_secs(1))
             .filter(move |mci| mci.data.custom_id == uuid_duel.to_string())
-            .filter(move |mci| mci.user.id == competitor.id)
+            // .filter(move |mci| mci.user.id == competitor.id)
             .await;
 
         match button {
@@ -100,10 +109,22 @@ pub async fn super_duel(
 
                 ctx.send(reply).await?;
 
-                let reply = {
-                    let embed = get_superhero_embed(Some(competitor)).await?;
-                    poise::CreateReply::default().embed(embed)
-                };
+                let reply: poise::CreateReply;
+
+                match competitor {
+                    Some(c) => {
+                        reply = {
+                            let embed = get_superhero_embed(Some(c)).await?;
+                            poise::CreateReply::default().embed(embed)
+                        }
+                    }
+                    None => {
+                        reply = {
+                            let embed = get_superhero_embed(Some(mci.user)).await?;
+                            poise::CreateReply::default().embed(embed)
+                        }
+                    }
+                }
 
                 ctx.send(reply).await?;
 
@@ -113,11 +134,17 @@ pub async fn super_duel(
         }
 
         if duration == 0 {
-            let timeout_response = format!(
-                "Duel request from {} to {} has timed out.",
-                ctx.author(),
-                competitor
-            );
+            let timeout_response: String;
+            match competitor {
+                Some(c) => {
+                    timeout_response =
+                        format!("Duel request from {} to {} has timed out.", ctx.author(), c);
+                }
+                None => {
+                    timeout_response =
+                        format!("Duel request from {} has timed out.", ctx.author(),);
+                }
+            }
             msg.edit(ctx, duel_message(uuid_duel, &timeout_response, None))
                 .await?;
 
