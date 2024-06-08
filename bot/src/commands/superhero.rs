@@ -1,13 +1,17 @@
 use poise::serenity_prelude::Color;
 
-use crate::superhero_api::get_random_superhero;
+// use crate::superhero_api::get_random_superhero;
 
 use crate::superhero_api::model::Powerstats;
+use crate::superhero_api::superhero::SuperheroApi;
 use crate::{Context, Error};
 use poise::serenity_prelude as serenity;
 
-async fn get_superhero_embed(user: Option<serenity::User>) -> Result<serenity::CreateEmbed, Error> {
-    let response = get_random_superhero().await?;
+async fn get_superhero_embed(
+    superhero_api: &SuperheroApi,
+    user: Option<serenity::User>,
+) -> Result<serenity::CreateEmbed, Error> {
+    let response = superhero_api.get_random_superhero().await?;
 
     let stats = &response.powerstats;
 
@@ -44,8 +48,10 @@ async fn get_superhero_embed(user: Option<serenity::User>) -> Result<serenity::C
 
 #[poise::command(slash_command)]
 pub async fn get_superhero(ctx: Context<'_>) -> Result<(), Error> {
+    let superhero_api = &ctx.data().superhero_api;
+
     let reply = {
-        let embed = get_superhero_embed(None).await?;
+        let embed = get_superhero_embed(&superhero_api, None).await?;
 
         poise::CreateReply::default().embed(embed)
     };
@@ -61,6 +67,7 @@ pub async fn super_duel(
     #[description = "Who do you want to challenge?"] competitor: Option<serenity::User>,
 ) -> Result<(), Error> {
     let uuid_duel = ctx.id();
+    let superhero_api = &ctx.data().superhero_api;
 
     let response: String;
 
@@ -102,7 +109,8 @@ pub async fn super_duel(
                     .await?;
 
                 let reply = {
-                    let embed = get_superhero_embed(Some(ctx.author().clone())).await?;
+                    let embed =
+                        get_superhero_embed(superhero_api, Some(ctx.author().clone())).await?;
 
                     poise::CreateReply::default().embed(embed)
                 };
@@ -114,13 +122,13 @@ pub async fn super_duel(
                 match competitor {
                     Some(c) => {
                         reply = {
-                            let embed = get_superhero_embed(Some(c)).await?;
+                            let embed = get_superhero_embed(superhero_api, Some(c)).await?;
                             poise::CreateReply::default().embed(embed)
                         }
                     }
                     None => {
                         reply = {
-                            let embed = get_superhero_embed(Some(mci.user)).await?;
+                            let embed = get_superhero_embed(superhero_api, Some(mci.user)).await?;
                             poise::CreateReply::default().embed(embed)
                         }
                     }

@@ -9,12 +9,14 @@ use std::{
 use giphy::v1::r#async::*;
 
 use poise::serenity_prelude as serenity;
+use superhero_api::superhero::SuperheroApi;
 
 mod commands;
 mod superhero_api;
 
 pub struct Data {
     giphy_api: AsyncApi,
+    superhero_api: SuperheroApi,
     gardy_count: AtomicU32,
     luxe_count: AtomicU32,
 }
@@ -38,15 +40,18 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().expect("Failed to load .env file");
+    dotenv::dotenv().ok();
 
     // giphy api
-    let api_key =
+    let giphy_api_key =
         var("GIPHY_API_KEY").unwrap_or_else(|e| panic!("error retrieving env variable: {:?}", e));
     let client = reqwest::Client::new();
-    let api = AsyncApi::new(api_key, client);
+    let api = AsyncApi::new(giphy_api_key, client);
 
-    // TODO superhero api key
+    // superhero api key
+    let superhero_api_key = var("SUPERHERO_API_KEY")
+        .unwrap_or_else(|e| panic!("error retrieving env variable: {:?}", e));
+    let super_api = SuperheroApi::new(superhero_api_key);
 
     // FrameworkOptions contains all of poise's configuration option in one struct
     // Every option can be omitted to use its default value
@@ -106,6 +111,7 @@ async fn main() {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
                     giphy_api: api,
+                    superhero_api: super_api,
                     gardy_count: AtomicU32::new(0),
                     luxe_count: AtomicU32::new(0),
                 })
