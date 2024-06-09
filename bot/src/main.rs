@@ -6,6 +6,10 @@ use std::{
     time::Duration,
 };
 
+use sqlx::postgres::PgPoolOptions;
+
+use color_eyre::{eyre::Report, Section};
+
 use giphy::v1::r#async::*;
 
 use poise::serenity_prelude as serenity;
@@ -39,19 +43,25 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 }
 
 #[tokio::main]
-async fn main() {
-    dotenv::dotenv().ok();
+async fn main() -> Result<(), Report> {
+    color_eyre::install()?;
 
     // giphy api
-    let giphy_api_key =
-        var("GIPHY_API_KEY").unwrap_or_else(|e| panic!("error retrieving env variable: {:?}", e));
+    let giphy_api_key = dotenvy::var("GIPHY_API_KEY").section("GIPHY_API_KEY must be set")?;
     let client = reqwest::Client::new();
     let api = AsyncApi::new(giphy_api_key, client);
 
     // superhero api key
-    let superhero_api_key = var("SUPERHERO_API_KEY")
-        .unwrap_or_else(|e| panic!("error retrieving env variable: {:?}", e));
+    let superhero_api_key =
+        dotenvy::var("SUPERHERO_API_KEY").section("SUPERHERO_API_KEY must be set")?;
     let super_api = SuperheroApi::new(superhero_api_key);
+
+    // database init
+    let db_url = dotenvy::var("DATABASE_URL").section("DATABASE_URL must be set")?;
+    let _pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url)
+        .await?;
 
     // FrameworkOptions contains all of poise's configuration option in one struct
     // Every option can be omitted to use its default value
@@ -128,5 +138,6 @@ async fn main() {
         .framework(framework)
         .await;
 
-    client.unwrap().start().await.unwrap()
+    client.unwrap().start().await.unwrap();
+    Ok(())
 }
