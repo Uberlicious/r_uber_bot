@@ -100,6 +100,9 @@ pub async fn event_handler(
             }
         }
 
+        serenity::FullEvent::Ready { data_about_bot } => {
+            println!("guilds: {:?}", data_about_bot);
+        }
         _ => {}
     }
     Ok(())

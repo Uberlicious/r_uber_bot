@@ -12,7 +12,7 @@ use color_eyre::{eyre::Report, Section};
 
 use giphy::v1::r#async::*;
 
-use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::{self as serenity};
 use superhero_api::superhero::SuperheroApi;
 
 mod commands;
@@ -57,10 +57,15 @@ async fn main() -> Result<(), Report> {
     let super_api = SuperheroApi::new(superhero_api_key);
 
     // database init
-    let db_url = dotenvy::var("DATABASE_URL").section("DATABASE_URL must be set")?;
+    let db_user = dotenvy::var("POSTGRES_USER").section("POSTGRES_USER must be set")?;
+    let db_password = dotenvy::var("POSTGRES_PASSWORD").section("POSTGRES_PASSWORD must be set")?;
+    let db = dotenvy::var("POSTGRES_DB").section("POSTGRES_DB must be set")?;
     let _pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect(&db_url)
+        .connect(&format!(
+            "postgresql://{}:{}@localhost:5432/{}",
+            db_user, db_password, db
+        ))
         .await?;
 
     // FrameworkOptions contains all of poise's configuration option in one struct
