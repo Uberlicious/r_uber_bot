@@ -100,9 +100,18 @@ pub async fn event_handler(
             }
         }
 
-        serenity::FullEvent::Ready { data_about_bot } => {
-            println!("guilds: {:?}", data_about_bot);
+        serenity::FullEvent::Ready { data_about_bot: _ } => {
+            // println!("guilds: {:?}", data_about_bot);
         }
+
+        serenity::FullEvent::CacheReady { guilds } => {
+            guilds
+                .iter()
+                .for_each(|g| println!("Connected to guild: {}", g.to_string()));
+
+            data.database.get_guilds().await?;
+        }
+
         _ => {}
     }
     Ok(())

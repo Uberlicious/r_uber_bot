@@ -6,7 +6,8 @@ use std::{
     time::Duration,
 };
 
-use sqlx::postgres::PgPoolOptions;
+use database::db::Database;
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 use color_eyre::{eyre::Report, Section};
 
@@ -16,11 +17,13 @@ use poise::serenity_prelude::{self as serenity};
 use superhero_api::superhero::SuperheroApi;
 
 mod commands;
+mod database;
 mod superhero_api;
 
 pub struct Data {
     giphy_api: AsyncApi,
     superhero_api: SuperheroApi,
+    database: Database,
     gardy_count: AtomicU32,
     luxe_count: AtomicU32,
 }
@@ -45,6 +48,7 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 #[tokio::main]
 async fn main() -> Result<(), Report> {
     color_eyre::install()?;
+    dotenvy::dotenv().ok();
 
     // giphy api
     let giphy_api_key = dotenvy::var("GIPHY_API_KEY").section("GIPHY_API_KEY must be set")?;
@@ -57,16 +61,22 @@ async fn main() -> Result<(), Report> {
     let super_api = SuperheroApi::new(superhero_api_key);
 
     // database init
-    let db_user = dotenvy::var("POSTGRES_USER").section("POSTGRES_USER must be set")?;
-    let db_password = dotenvy::var("POSTGRES_PASSWORD").section("POSTGRES_PASSWORD must be set")?;
-    let db = dotenvy::var("POSTGRES_DB").section("POSTGRES_DB must be set")?;
-    let _pool = PgPoolOptions::new()
+    // let db_user = dotenvy::var("POSTGRES_USER").section("POSTGRES_USER must be set")?;
+    // let db_password = dotenvy::var("POSTGRES_PASSWORD").section("POSTGRES_PASSWORD must be set")?;
+    // let db = dotenvy::var("POSTGRES_DB").section("POSTGRES_DB must be set")?;
+    let db_url = dotenvy::var("DATABASE_URL").section("DATABASE_URL must be set")?;
+    println!("{db_url}");
+    let pool: Pool<Postgres> = PgPoolOptions::new()
         .max_connections(5)
-        .connect(&format!(
-            "postgresql://{}:{}@localhost:5432/{}",
-            db_user, db_password, db
-        ))
+        .connect(&db_url)
         .await?;
+
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Couldn't run database migrations");
+
+    let database = Database::new(pool);
 
     // FrameworkOptions contains all of poise's configuration option in one struct
     // Every option can be omitted to use its default value
@@ -127,6 +137,7 @@ async fn main() -> Result<(), Report> {
                 Ok(Data {
                     giphy_api: api,
                     superhero_api: super_api,
+                    database: database,
                     gardy_count: AtomicU32::new(0),
                     luxe_count: AtomicU32::new(0),
                 })
