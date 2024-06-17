@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select * from guilds where guild_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "guild_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "prefix",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "f5aba9fbfac2f9e22487240e285148a2938a00150b09d51984a2dcf7b265b1b5"
+}

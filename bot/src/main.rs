@@ -76,6 +76,8 @@ async fn main() -> Result<(), Report> {
         .await
         .expect("Couldn't run database migrations");
 
+    println!("migration run");
+
     let database = Database::new(pool);
 
     // FrameworkOptions contains all of poise's configuration option in one struct
