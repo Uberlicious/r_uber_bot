@@ -114,6 +114,12 @@ pub async fn event_handler(
             for guild_id in guilds {
                 let g_id = i64::from(guild_id.clone());
                 let g = data.database.get_guild(g_id).await?;
+
+                if g.is_none() {
+                    println!("Guild {} not in table, creating...", g_id);
+                    data.database.create_guild(g_id).await?;
+                }
+
                 println!("Guild: {:?}", g);
             }
 

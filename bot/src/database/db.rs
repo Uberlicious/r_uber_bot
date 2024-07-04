@@ -1,4 +1,5 @@
 use color_eyre::eyre::Report;
+use serde_json::from_str;
 use sqlx::PgPool;
 
 use crate::database::models::Guild;
@@ -34,5 +35,27 @@ impl Database {
         .await?;
 
         Ok(guild)
+    }
+
+    pub async fn create_guild(&self, guild_id: i64) -> Result<Guild, Report> {
+        let pool = self.pool.clone();
+
+        let newGuild = Guild {
+            guild_id,
+            prefix: None,
+        };
+
+        let result = sqlx::query_as!(
+            Guild,
+            "insert into guilds (guild_id, prefix) values ($1, $2)",
+            newGuild.guild_id,
+            newGuild.prefix
+        )
+        .execute(&pool)
+        .await?;
+
+        println!("{:?}", result);
+
+        Ok(newGuild)
     }
 }
