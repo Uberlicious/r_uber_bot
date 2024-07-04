@@ -20,7 +20,6 @@ impl Database {
             .await?;
 
         Ok(guilds)
-        // .expect("Unable to get guilds")
     }
 
     pub async fn get_guild(&self, guild_id: i64) -> Result<Option<Guild>, Report> {

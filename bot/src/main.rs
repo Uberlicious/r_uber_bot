@@ -71,10 +71,7 @@ async fn main() -> Result<(), Report> {
         .connect(&db_url)
         .await?;
 
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("Couldn't run database migrations");
+    sqlx::migrate!("./migrations").run(&pool).await?;
 
     println!("migration run");
 
