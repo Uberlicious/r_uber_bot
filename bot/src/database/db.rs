@@ -40,22 +40,19 @@ impl Database {
     pub async fn create_guild(&self, guild_id: i64) -> Result<Guild, Report> {
         let pool = self.pool.clone();
 
-        let newGuild = Guild {
-            guild_id,
-            prefix: None,
-        };
+        let new_guild = Guild::new(guild_id);
 
         let result = sqlx::query_as!(
             Guild,
             "insert into guilds (guild_id, prefix) values ($1, $2)",
-            newGuild.guild_id,
-            newGuild.prefix
+            new_guild.guild_id,
+            new_guild.prefix
         )
         .execute(&pool)
         .await?;
 
         println!("{:?}", result);
 
-        Ok(newGuild)
+        Ok(new_guild)
     }
 }
