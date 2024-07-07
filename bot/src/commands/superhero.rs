@@ -46,7 +46,7 @@ async fn get_superhero_embed(
     Ok(embed)
 }
 
-#[poise::command(slash_command)]
+#[poise::command(slash_command, prefix_command)]
 pub async fn get_superhero(ctx: Context<'_>) -> Result<(), Error> {
     let superhero_api = &ctx.data().superhero_api;
 

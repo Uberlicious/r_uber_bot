@@ -14,8 +14,8 @@ impl Guild {
         }
     }
 
-    pub fn with_prefix(mut self, prefix: String) -> Guild {
-        self.prefix = Some(prefix);
+    pub fn with_prefix(mut self, prefix: &String) -> Guild {
+        self.prefix = Some(prefix.clone());
         self
     }
 }

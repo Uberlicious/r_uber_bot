@@ -30,6 +30,7 @@ pub struct Data {
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
+type PartialContext<'a> = poise::PartialContext<'a, Data, Error>;
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
@@ -89,7 +90,7 @@ async fn main() -> Result<(), Report> {
             commands::settings::set_prefix(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
-            prefix: Some("u!".into()),
+            dynamic_prefix: Some(|ctx| Box::pin(commands::settings::get_prefix(ctx))),
             edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(
                 Duration::from_secs(3600),
             ))),
