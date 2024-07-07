@@ -1,8 +1,5 @@
-use std::sync::Arc;
-
 use crate::Error;
 use color_eyre::eyre::Report;
-use poise::serenity_prelude::FutureExt;
 use sqlx::PgPool;
 
 use crate::database::models::Guild;
@@ -26,17 +23,17 @@ impl Database {
         Ok(guilds)
     }
 
-    pub async fn get_guild(&self, guild_id: i64) -> Result<Guild, Error> {
+    pub async fn get_guild(&self, guild_id: i64) -> Result<Option<Guild>, Report> {
         let pool = self.pool.clone();
 
         let guild = sqlx::query_as!(Guild, "select * from guilds where guild_id = $1", guild_id)
-            .fetch_one(&pool)
+            .fetch_optional(&pool)
             .await?;
 
         Ok(guild)
     }
 
-    pub async fn create_guild(&self, guild_id: i64) -> Result<Guild, Error> {
+    pub async fn create_guild(&self, guild_id: i64) -> Result<Guild, Report> {
         let pool = self.pool.clone();
 
         let new_guild = Guild::new(guild_id);
