@@ -1,2 +1,4 @@
+pub use models::Guild;
+
 pub mod db;
-mod models;
+pub mod models;

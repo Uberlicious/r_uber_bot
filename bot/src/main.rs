@@ -86,6 +86,7 @@ async fn main() -> Result<(), Report> {
             commands::superhero::get_superhero(),
             commands::superhero::super_duel(),
             commands::role_assign::create_role_assign(),
+            commands::settings::set_prefix(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("u!".into()),
@@ -105,7 +106,7 @@ async fn main() -> Result<(), Report> {
         // This code is run after a command if it was successful (returned Ok)
         post_command: |ctx| {
             Box::pin(async move {
-                println!("Executed command {}!", ctx.command().qualified_name);
+                println!("{} command finished!", ctx.command().qualified_name);
             })
         },
         // Every command invocation must pass this check to continue execution
