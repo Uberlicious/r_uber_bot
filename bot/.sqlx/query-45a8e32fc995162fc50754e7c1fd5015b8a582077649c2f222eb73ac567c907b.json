@@ -12,6 +12,11 @@
         "ordinal": 1,
         "name": "prefix",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "role_assign_id",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -19,6 +24,7 @@
     },
     "nullable": [
       false,
+      true,
       true
     ]
   },

@@ -8,6 +8,24 @@ pub async fn create_role_assign(
     #[channel_types("Text")]
     channel: serenity::Channel,
 ) -> Result<(), Error> {
-    ctx.say(format!("channel: {}", channel.to_string())).await?;
+    let guild = ctx
+        .data()
+        .database
+        .get_guild(ctx.guild_id().unwrap().into())
+        .await?;
+
+    if let None = guild {
+        ctx.say("Must be in a server!").await?;
+    }
+
+    // let g = guild.unwrap().with_role_assign_id(channel.id().into());
+    // ctx.data().database.update_guild(g).await?;
+    ctx.data()
+        .database
+        .create_role_assign(channel.id().into(), None)
+        .await?;
+
+    ctx.say(format!("Role assign channel set: {}", channel.to_string()))
+        .await?;
     Ok(())
 }

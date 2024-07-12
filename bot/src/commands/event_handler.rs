@@ -105,26 +105,14 @@ pub async fn event_handler(
         }
 
         serenity::FullEvent::CacheReady { guilds } => {
-            guilds.iter().for_each(|g| {
-                // let guild_id = i64::from(g.clone());
-                println!("{:?}", i64::from(g.clone()));
-                // let g = data.database.get_guild(guild_id).await?;
-                // println!("Guild: {:?}", g);
-            });
             for guild_id in guilds {
                 let g_id = i64::from(guild_id.clone());
-                // let g = data.database.get_guild(g_id).await?;
+                let g = data.database.get_guild(g_id).await?;
 
-                // if g.is_none() {
-                //     println!("Guild {} not in table, creating...", g_id);
-                //     data.database.create_guild(g_id).await?;
-                // }
-
-                // println!("Guild: {:?}", g);
+                if g.is_none() {
+                    data.database.create_guild(g_id).await?;
+                }
             }
-
-            let g = data.database.get_guilds().await?;
-            println!("{:?}", g)
         }
 
         _ => {}

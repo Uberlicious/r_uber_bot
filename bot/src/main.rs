@@ -72,7 +72,7 @@ async fn main() -> Result<(), Report> {
         .connect(&db_url)
         .await?;
 
-    sqlx::migrate!("./migrations").run(&pool).await?;
+    // sqlx::migrate!("./migrations").run(&pool).await?;
 
     println!("migration run");
 

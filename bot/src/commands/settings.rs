@@ -1,5 +1,3 @@
-use std::path::Prefix;
-
 use crate::{Context, Error, PartialContext};
 
 pub async fn get_prefix(ctx: PartialContext<'_>) -> Result<Option<String>, Error> {
@@ -32,16 +30,11 @@ pub async fn set_prefix(
     // guild only command, should always unwrap
     let guild_id = i64::from(ctx.guild().unwrap().id);
 
-    println!("update guild prefix: {:?}", prefix);
-
     let guild = ctx.data().database.get_guild(guild_id).await?;
-
-    println!("guild: {:?}", guild);
 
     if let Some(guild) = guild {
         let updated = guild.clone().with_prefix(&prefix);
 
-        println!("updated guild: {:?}", updated);
         ctx.data().database.update_guild(updated).await?;
 
         match guild.prefix {
@@ -55,26 +48,6 @@ pub async fn set_prefix(
             }
         }
     }
-
-    // let db = ctx.data().database.pool.clone();
-    // let guild = sqlx::query_as!(
-    //     dbGuild,
-    //     "select * from guilds where guild_id = $1",
-    //     i64::from(ctx.guild().unwrap().id)
-    // )
-    // .fetch_optional(&db)
-    // .await?;
-
-    // println!("Guild: {:?}", guild);
-
-    // if let Some(g) = Option::as_ref(&localGuild) {
-    //     let updated = g.clone().with_prefix(prefix);
-
-    //     println!("updated {:?}", updated)
-    // }
-
-    // data.database.update_guild(Guild, prefix)
-    // Guild::new()
 
     Ok(())
 }

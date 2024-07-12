@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into role_assign (channel, roles) values ($1, $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a4e819ad7e6b0e79fdb791ca8a043a4eeb6e955c3dc06be1f782e2b94c3c4ad6"
+}

@@ -1,8 +1,10 @@
 use crate::Error;
 use color_eyre::eyre::Report;
-use sqlx::PgPool;
+use sqlx::{postgres::PgRow, PgPool};
 
 use crate::database::models::Guild;
+
+use super::models::RoleAssign;
 
 pub struct Database {
     pub pool: PgPool,
@@ -47,8 +49,6 @@ impl Database {
         .execute(&pool)
         .await?;
 
-        println!("{:?}", result);
-
         Ok(new_guild)
     }
 
@@ -57,13 +57,33 @@ impl Database {
 
         sqlx::query_as!(
             Guild,
-            "update guilds set prefix = $1 where guild_id = $2",
+            "update guilds set prefix = $2, role_assign_id = $3 where guild_id = $1",
+            guild.guild_id,
             guild.prefix,
-            guild.guild_id
+            guild.role_assign_id,
         )
         .execute(&pool)
         .await?;
 
         Ok(())
+    }
+
+    pub async fn create_role_assign(
+        &self,
+        channel_id: i64,
+        roles: Option<Vec<i64>>,
+    ) -> Result<RoleAssign, Report> {
+        let pool = self.pool.clone();
+
+        let result = sqlx::query_as!(
+            RoleAssign,
+            "insert into role_assign (channel, roles) values ($1, $2) returning id, channel, roles",
+            channel_id,
+            roles.as_deref(),
+        )
+        .fetch_one(&pool)
+        .await?;
+
+        Ok(result)
     }
 }
