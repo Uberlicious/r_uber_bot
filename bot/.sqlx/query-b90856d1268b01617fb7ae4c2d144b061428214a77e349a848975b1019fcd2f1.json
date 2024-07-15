@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "insert into role_assign (channel, roles) values ($1, $2) returning id, channel, roles",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "channel",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "roles",
+        "type_info": "Int8Array"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8Array"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "b90856d1268b01617fb7ae4c2d144b061428214a77e349a848975b1019fcd2f1"
+}

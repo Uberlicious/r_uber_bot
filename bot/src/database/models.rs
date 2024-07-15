@@ -1,3 +1,4 @@
+use poise::serenity_prelude::Timestamp;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -29,7 +30,7 @@ impl Guild {
 
 #[derive(sqlx::Type, Debug, Clone, Deserialize, Serialize)]
 pub struct RoleAssign {
-    pub id: i32,
+    pub id: Option<i32>,
     pub channel: i64,
     pub roles: Option<Vec<i64>>,
 }
@@ -37,7 +38,7 @@ pub struct RoleAssign {
 impl RoleAssign {
     pub fn new(channel_id: i64) -> RoleAssign {
         RoleAssign {
-            id: 0,
+            id: None,
             channel: channel_id,
             roles: None,
         }
@@ -47,4 +48,12 @@ impl RoleAssign {
         self.roles = Some(roles);
         self
     }
+}
+
+#[derive(sqlx::Type, Debug, Deserialize, Serialize)]
+pub struct CommandHistory {
+    pub id: Option<i32>,
+    pub user_id: i64,
+    pub command_name: String,
+    pub executed_at: chrono::DateTime<chrono::Utc>,
 }

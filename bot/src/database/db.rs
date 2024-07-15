@@ -1,10 +1,10 @@
 use crate::Error;
 use color_eyre::eyre::Report;
-use sqlx::{postgres::PgRow, PgPool};
+use sqlx::PgPool;
 
 use crate::database::models::Guild;
 
-use super::models::RoleAssign;
+use super::models::{CommandHistory, RoleAssign};
 
 pub struct Database {
     pub pool: PgPool,
@@ -85,5 +85,20 @@ impl Database {
         .await?;
 
         Ok(result)
+    }
+
+    pub async fn create_command_entry(&self, command: CommandHistory) -> Result<(), Report> {
+        let pool = self.pool.clone();
+
+        sqlx::query(
+            "insert into command_history (user_id, command_name, executed_at) values ($1, $2, $3)",
+        )
+        .bind(command.user_id)
+        .bind(command.command_name)
+        .bind(command.executed_at)
+        .execute(&pool)
+        .await?;
+
+        Ok(())
     }
 }

@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use database::db::Database;
+use database::{db::Database, models::CommandHistory};
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 use color_eyre::{eyre::Report, Section};
@@ -107,7 +107,16 @@ async fn main() -> Result<(), Report> {
         // This code is run after a command if it was successful (returned Ok)
         post_command: |ctx| {
             Box::pin(async move {
+                println!(
+                    "command {} executed by {} at {}",
+                    ctx.command().qualified_name,
+                    ctx.author().id,
+                    ctx.created_at().timestamp()
+                );
+
                 println!("{} command finished!", ctx.command().qualified_name);
+
+                create_command_history_item(ctx).await;
             })
         },
         // Every command invocation must pass this check to continue execution
@@ -157,4 +166,21 @@ async fn main() -> Result<(), Report> {
 
     client.unwrap().start().await.unwrap();
     Ok(())
+}
+
+pub async fn create_command_history_item(ctx: Context<'_>) {
+    println!("ctx: {:?}", ctx.command().qualified_name);
+
+    let ch = CommandHistory {
+        id: None,
+        user_id: ctx.author().id.into(),
+        command_name: ctx.command().qualified_name.clone(),
+        executed_at: ctx.created_at().to_utc(),
+    };
+
+    ctx.data()
+        .database
+        .create_command_entry(ch)
+        .await
+        .expect("error creating db command history item");
 }
