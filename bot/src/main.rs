@@ -66,15 +66,12 @@ async fn main() -> Result<(), Report> {
     // let db_password = dotenvy::var("POSTGRES_PASSWORD").section("POSTGRES_PASSWORD must be set")?;
     // let db = dotenvy::var("POSTGRES_DB").section("POSTGRES_DB must be set")?;
     let db_url = dotenvy::var("DATABASE_URL").section("DATABASE_URL must be set")?;
-    println!("{db_url}");
     let pool: Pool<Postgres> = PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(20)
         .connect(&db_url)
         .await?;
 
-    // sqlx::migrate!("./migrations").run(&pool).await?;
-
-    println!("migration run");
+    sqlx::migrate!("./migrations").run(&pool).await?;
 
     let database = Database::new(pool);
 

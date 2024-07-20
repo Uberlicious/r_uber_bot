@@ -7,6 +7,8 @@ services:
       dockerfile: rust.dockerfile
     env_file:
       - .env
+    environment:
+      - DATABASE_URL=postgresql://${postgres_user}:${postgres_password}@db:5432/${POSTGRES_DB}
     depends_on:
       - db
   db:

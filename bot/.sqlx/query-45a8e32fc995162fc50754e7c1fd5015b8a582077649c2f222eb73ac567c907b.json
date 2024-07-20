@@ -11,12 +11,12 @@
       {
         "ordinal": 1,
         "name": "prefix",
-        "type_info": "Text"
+        "type_info": "Varchar"
       },
       {
         "ordinal": 2,
         "name": "role_assign_id",
-        "type_info": "Int8"
+        "type_info": "Int4"
       }
     ],
     "parameters": {
@@ -25,7 +25,7 @@
     "nullable": [
       false,
       true,
-      true
+      false
     ]
   },
   "hash": "45a8e32fc995162fc50754e7c1fd5015b8a582077649c2f222eb73ac567c907b"

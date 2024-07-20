@@ -14,6 +14,7 @@ pub async fn create_role_assign(
         .get_guild(ctx.guild_id().unwrap().into())
         .await?;
 
+    println!("guild: {:?}", guild);
     if let None = guild {
         ctx.say("Must be in a server!").await?;
     }

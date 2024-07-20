@@ -6,8 +6,8 @@
     "parameters": {
       "Left": [
         "Int8",
-        "Text",
-        "Int8"
+        "Varchar",
+        "Int4"
       ]
     },
     "nullable": []
