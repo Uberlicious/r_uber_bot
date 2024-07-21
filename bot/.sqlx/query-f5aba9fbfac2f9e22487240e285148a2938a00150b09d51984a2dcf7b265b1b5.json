@@ -16,7 +16,7 @@
       {
         "ordinal": 2,
         "name": "role_assign_id",
-        "type_info": "Int4"
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -27,7 +27,7 @@
     "nullable": [
       false,
       true,
-      false
+      true
     ]
   },
   "hash": "f5aba9fbfac2f9e22487240e285148a2938a00150b09d51984a2dcf7b265b1b5"

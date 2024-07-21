@@ -1,12 +1,14 @@
 // #![warn(clippy::str_to_string)]
 
 use std::{
-    env::var,
+    env::{self, var},
     sync::{atomic::AtomicU32, Arc},
     time::Duration,
 };
 
+use chrono::{FixedOffset, TimeZone, Utc};
 use database::{db::Database, models::CommandHistory};
+use log::info;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 use color_eyre::{eyre::Report, Section};
@@ -51,6 +53,13 @@ async fn main() -> Result<(), Report> {
     color_eyre::install()?;
     dotenvy::dotenv().ok();
 
+    let env = dotenvy::var("ENV")?;
+    if env == "dev" {
+        env::set_var("RUST_LOG", "warning")
+    }
+
+    pretty_env_logger::init();
+
     // giphy api
     let giphy_api_key = dotenvy::var("GIPHY_API_KEY").section("GIPHY_API_KEY must be set")?;
     let client = reqwest::Client::new();
@@ -62,9 +71,6 @@ async fn main() -> Result<(), Report> {
     let super_api = SuperheroApi::new(superhero_api_key);
 
     // database init
-    // let db_user = dotenvy::var("POSTGRES_USER").section("POSTGRES_USER must be set")?;
-    // let db_password = dotenvy::var("POSTGRES_PASSWORD").section("POSTGRES_PASSWORD must be set")?;
-    // let db = dotenvy::var("POSTGRES_DB").section("POSTGRES_DB must be set")?;
     let db_url = dotenvy::var("DATABASE_URL").section("DATABASE_URL must be set")?;
     let pool: Pool<Postgres> = PgPoolOptions::new()
         .max_connections(20)
@@ -98,19 +104,24 @@ async fn main() -> Result<(), Report> {
         // This code is run before every command
         pre_command: |ctx| {
             Box::pin(async move {
-                println!("Executing command {}...", ctx.command().qualified_name);
+                println!(
+                    "command {} executed by {} at {}",
+                    ctx.command().qualified_name,
+                    ctx.author()
+                        .global_name
+                        .clone()
+                        .unwrap_or(ctx.author().name.clone()),
+                    ctx.created_at()
+                        .naive_local()
+                        .and_local_timezone(FixedOffset::west_opt(5 * 3600).unwrap())
+                        .unwrap()
+                        .to_rfc2822()
+                );
             })
         },
         // This code is run after a command if it was successful (returned Ok)
         post_command: |ctx| {
             Box::pin(async move {
-                println!(
-                    "command {} executed by {} at {}",
-                    ctx.command().qualified_name,
-                    ctx.author().id,
-                    ctx.created_at().timestamp()
-                );
-
                 println!("{} command finished!", ctx.command().qualified_name);
 
                 create_command_history_item(ctx).await;
@@ -140,11 +151,12 @@ async fn main() -> Result<(), Report> {
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 println!("Logged in as {}", _ready.user.name);
+                info!("logged in as {}", _ready.user.name);
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
                     giphy_api: api,
                     superhero_api: super_api,
-                    database: database,
+                    database,
                     gardy_count: AtomicU32::new(0),
                     luxe_count: AtomicU32::new(0),
                 })
@@ -166,11 +178,10 @@ async fn main() -> Result<(), Report> {
 }
 
 pub async fn create_command_history_item(ctx: Context<'_>) {
-    println!("ctx: {:?}", ctx.command().qualified_name);
-
     let ch = CommandHistory {
         id: None,
         user_id: ctx.author().id.into(),
+        guild_id: ctx.guild_id().unwrap().into(),
         command_name: ctx.command().qualified_name.clone(),
         executed_at: ctx.created_at().to_utc(),
     };

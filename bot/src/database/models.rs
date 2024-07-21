@@ -28,9 +28,9 @@ impl Guild {
     }
 }
 
-#[derive(sqlx::Type, Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RoleAssign {
-    pub id: Option<i32>,
+    pub id: Option<i64>,
     pub channel: i64,
     pub roles: Option<Vec<i64>>,
 }
@@ -50,10 +50,11 @@ impl RoleAssign {
     }
 }
 
-#[derive(sqlx::Type, Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct CommandHistory {
-    pub id: Option<i32>,
+    pub id: Option<i64>,
     pub user_id: i64,
+    pub guild_id: i64,
     pub command_name: String,
     pub executed_at: chrono::DateTime<chrono::Utc>,
 }

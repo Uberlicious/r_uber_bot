@@ -8,7 +8,7 @@ use giphy::v1::r#async::RunnableAsyncRequest;
 
 use poise::serenity_prelude::{self as serenity, Message};
 
-use crate::{Data, Error};
+use crate::{database::models::CommandHistory, Data, Error};
 
 fn trigger_check(message: String, set: &RegexSet) -> bool {
     let matches: Vec<_> = set.matches(message.as_str()).into_iter().collect();
@@ -22,7 +22,7 @@ async fn friend_trigger(
     data: &Data,
     set: &RegexSet,
     tags: Vec<&str>,
-    count: Option<&AtomicU32>,
+    trigger_name: &str,
 ) -> Result<(), Error> {
     if !trigger_check(msg.content.to_lowercase(), set) {
         return Ok(());
@@ -33,11 +33,6 @@ async fn friend_trigger(
         return Ok(());
     }
 
-    if let Some(count) = count {
-        let new_count = count.load(Ordering::SeqCst) + 1;
-        count.store(new_count, Ordering::SeqCst);
-    }
-
     let response = RandomRequest::new()
         .with_tag(tags.choose(&mut rng).expect("no option"))
         .send_to(&data.giphy_api)
@@ -46,6 +41,16 @@ async fn friend_trigger(
     if let Err(why) = msg.channel_id.say(&ctx.http, response.data.embed_url).await {
         println!("Error sending message: {:?}", why);
     };
+
+    let ch = CommandHistory {
+        id: None,
+        user_id: msg.author.id.into(),
+        guild_id: msg.guild_id.unwrap().into(),
+        command_name: String::from(trigger_name),
+        executed_at: msg.timestamp.to_utc(),
+    };
+
+    data.database.create_command_entry(ch).await?;
 
     Ok(())
 }
@@ -69,7 +74,7 @@ pub async fn event_handler(
                 data,
                 &RegexSet::new([r"gardy.?time", r"grady.?time", r"tobey.?time"]).unwrap(),
                 vec!["time"],
-                Some(&data.gardy_count),
+                "gardy_time",
             )
             .await?;
 
@@ -80,7 +85,7 @@ pub async fn event_handler(
                 data,
                 &RegexSet::new([r"luxe.?time"]).unwrap(),
                 vec!["bathroom", "shower"],
-                Some(&data.luxe_count),
+                "luxe_time",
             )
             .await?;
 

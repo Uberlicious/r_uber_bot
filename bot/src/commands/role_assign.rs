@@ -1,5 +1,6 @@
+use poise::serenity_prelude::{self as serenity};
+
 use crate::{Context, Error};
-use poise::serenity_prelude as serenity;
 
 #[poise::command(slash_command, guild_only = true)]
 pub async fn create_role_assign(
@@ -26,7 +27,16 @@ pub async fn create_role_assign(
         .create_role_assign(channel.id().into(), None)
         .await?;
 
-    ctx.say(format!("Role assign channel set: {}", channel.to_string()))
-        .await?;
+    let embed = serenity::CreateEmbed::new().title("Role Assign".to_string());
+
+    let reply = poise::CreateReply::default().embed(embed.clone());
+    ctx.send(reply.clone()).await?;
+
+    // ctx.cache().channel(channel.id()).unwrap().send_message(ctx);
+    // ctx.say(format!(
+    //     "Role assign channel set in channel: {}",
+    //     channel.to_string()
+    // ))
+    // .await?;
     Ok(())
 }

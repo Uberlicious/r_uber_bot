@@ -91,9 +91,10 @@ impl Database {
         let pool = self.pool.clone();
 
         sqlx::query(
-            "insert into command_history (user_id, command_name, executed_at) values ($1, $2, $3)",
+            "insert into command_history (user_id, guild_id, command_name, executed_at) values ($1, $2, $3, $4)",
         )
         .bind(command.user_id)
+        .bind(command.guild_id)
         .bind(command.command_name)
         .bind(command.executed_at)
         .execute(&pool)

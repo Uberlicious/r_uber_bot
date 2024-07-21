@@ -1,6 +1,8 @@
 #Build stage
 FROM rust:1.78-buster as builder
 
+WORKDIR /app
+
 # Copy the source code
 COPY . .
 
@@ -13,10 +15,7 @@ FROM debian:buster-slim
 WORKDIR /usr/local/bin
 
 COPY --from=builder /app/target/release .
-COPY --from=builder /app/.sqlx .
-COPY --from=builder /app/migrations .
 
 RUN apt-get update && apt install -y openssl ca-certificates
-RUN cargo install sqlx-cli
 
-CMD ["sqlx migrate run", "./r_uber_bot"]
+CMD ["./r_uber_bot"]
