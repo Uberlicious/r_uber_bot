@@ -68,6 +68,17 @@ impl Database {
         Ok(())
     }
 
+    pub async fn get_role_assign(&self, id: i64) -> Result<Option<RoleAssign>, Report> {
+        let pool = self.pool.clone();
+
+        let role_assign =
+            sqlx::query_as!(RoleAssign, "select * from role_assign where id = $1", id)
+                .fetch_optional(&pool)
+                .await?;
+
+        Ok(role_assign)
+    }
+
     pub async fn create_role_assign(
         &self,
         channel_id: i64,

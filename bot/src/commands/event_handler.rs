@@ -1,14 +1,16 @@
+use std::str::FromStr;
+
 use rand::{rngs::StdRng, seq::SliceRandom, Rng, SeedableRng};
 use regex::RegexSet;
-
-use std::sync::atomic::{AtomicU32, Ordering};
 
 use giphy::v1::gifs::RandomRequest;
 use giphy::v1::r#async::RunnableAsyncRequest;
 
 use poise::serenity_prelude::{self as serenity, Message};
 
-use crate::{database::models::CommandHistory, Data, Error};
+use crate::{
+    commands::role_assign::RoleAssignmentButton, database::models::CommandHistory, Data, Error,
+};
 
 fn trigger_check(message: String, set: &RegexSet) -> bool {
     let matches: Vec<_> = set.matches(message.as_str()).into_iter().collect();
@@ -107,6 +109,23 @@ pub async fn event_handler(
 
         serenity::FullEvent::Ready { data_about_bot: _ } => {
             // println!("guilds: {:?}", data_about_bot);
+        }
+
+        serenity::FullEvent::InteractionCreate { interaction } => {
+            match interaction.as_message_component() {
+                Some(component) => {
+                    match RoleAssignmentButton::from(component.data.custom_id.clone()) {
+                        RoleAssignmentButton::AssignRole => {
+                            println!("Assign Role button was clicked");
+                        }
+                        RoleAssignmentButton::AddRole => {
+                            println!("Add Role button was clicked");
+                        }
+                        _ => {}
+                    }
+                }
+                None => {}
+            }
         }
 
         serenity::FullEvent::CacheReady { guilds } => {
