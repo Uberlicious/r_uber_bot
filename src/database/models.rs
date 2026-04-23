@@ -1,7 +1,6 @@
-use poise::serenity_prelude::Timestamp;
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Guild {
     pub guild_id: i64,
     pub prefix: Option<String>,
@@ -22,19 +21,21 @@ impl Guild {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_role_assign_id(mut self, role_assign_id: i64) -> Guild {
         self.role_assign_id = Some(role_assign_id);
         self
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow)]
 pub struct RoleAssign {
     pub id: Option<i64>,
     pub channel: i64,
     pub roles: Option<Vec<i64>>,
 }
 
+#[allow(dead_code)]
 impl RoleAssign {
     pub fn new(channel_id: i64) -> RoleAssign {
         RoleAssign {
@@ -50,7 +51,7 @@ impl RoleAssign {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, sqlx::FromRow)]
 pub struct CommandHistory {
     pub id: Option<i64>,
     pub user_id: i64,

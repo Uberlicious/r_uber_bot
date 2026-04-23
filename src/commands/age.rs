@@ -1,5 +1,3 @@
-use std::sync::atomic::Ordering;
-
 use crate::{Context, Error};
 use poise::serenity_prelude as serenity;
 
@@ -15,11 +13,8 @@ pub async fn age(
     Ok(())
 }
 
-// check how many times gardy time has occurred
 #[poise::command(slash_command, ephemeral)]
 pub async fn gardy_count(ctx: Context<'_>) -> Result<(), Error> {
-    let count = ctx.data().gardy_count.load(Ordering::SeqCst);
-    let response = format!("Gardy time has been triggered {count} times");
-    ctx.say(response).await?;
+    ctx.say("Gardy count command is currently being migrated to database stats.").await?;
     Ok(())
 }

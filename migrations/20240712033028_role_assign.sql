@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS role_assign
+(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel INTEGER NOT NULL,
+    roles TEXT
+);

@@ -1,17 +1,18 @@
 // #![warn(clippy::str_to_string)]
 
 use std::{
-    env::{self, var},
-    sync::{atomic::AtomicU32, Arc},
+    env::{self},
+    sync::Arc,
     time::Duration,
+    str::FromStr,
 };
 
-use chrono::{FixedOffset, TimeZone, Utc};
-use database::{db::Database, models::CommandHistory};
+use chrono::FixedOffset;
+use database::db::Database;
+use database::models::CommandHistory;
 use log::info;
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
-use color_eyre::{eyre::Report, Section};
+use color_eyre::{eyre::Report};
 
 use giphy::v1::r#async::*;
 
@@ -26,8 +27,6 @@ pub struct Data {
     giphy_api: AsyncApi,
     superhero_api: SuperheroApi,
     database: Database,
-    gardy_count: AtomicU32,
-    luxe_count: AtomicU32,
 }
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -53,29 +52,28 @@ async fn main() -> Result<(), Report> {
     color_eyre::install()?;
     dotenvy::dotenv().ok();
 
-    let env = dotenvy::var("ENV")?;
+    let env = dotenvy::var("ENV").unwrap_or_else(|_| "prod".to_string());
     if env == "dev" {
-        env::set_var("RUST_LOG", "warning")
+        env::set_var("RUST_LOG", "debug")
     }
 
     pretty_env_logger::init();
 
     // giphy api
-    let giphy_api_key = dotenvy::var("GIPHY_API_KEY").section("GIPHY_API_KEY must be set")?;
-    let client = reqwest::Client::new();
-    let api = AsyncApi::new(giphy_api_key, client);
+    let giphy_api_key = dotenvy::var("GIPHY_API_KEY").map_err(|e| Report::msg(format!("GIPHY_API_KEY must be set: {}", e)))?;
+    let client_0_11 = reqwest_0_11::Client::new();
+    let api = AsyncApi::new(giphy_api_key, client_0_11);
 
     // superhero api key
     let superhero_api_key =
-        dotenvy::var("SUPERHERO_API_KEY").section("SUPERHERO_API_KEY must be set")?;
+        dotenvy::var("SUPERHERO_API_KEY").map_err(|e| Report::msg(format!("SUPERHERO_API_KEY must be set: {}", e)))?;
     let super_api = SuperheroApi::new(superhero_api_key);
 
     // database init
-    let db_url = dotenvy::var("DATABASE_URL").section("DATABASE_URL must be set")?;
-    let pool: Pool<Postgres> = PgPoolOptions::new()
-        .max_connections(20)
-        .connect(&db_url)
-        .await?;
+    let db_url = dotenvy::var("DATABASE_URL").map_err(|e| Report::msg(format!("DATABASE_URL must be set: {}", e)))?;
+    let connection_options = sqlx::sqlite::SqliteConnectOptions::from_str(&db_url)?
+        .create_if_missing(true);
+    let pool = sqlx::SqlitePool::connect_with(connection_options).await?;
 
     sqlx::migrate!("./migrations").run(&pool).await?;
 
@@ -83,26 +81,33 @@ async fn main() -> Result<(), Report> {
 
     // FrameworkOptions contains all of poise's configuration option in one struct
     // Every option can be omitted to use its default value
-    let options = poise::FrameworkOptions {
+    let options: poise::FrameworkOptions<Data, Error> = poise::FrameworkOptions {
         commands: vec![
+            commands::management::sync(),
             commands::age::age(),
             commands::age::gardy_count(),
             commands::superhero::get_superhero(),
             commands::superhero::super_duel(),
-            commands::role_assign::create_role_assign(),
+            commands::role_assign::role_menu(),
+            commands::role_assign::delete_role_menu(),
+            commands::management::manage_roles(),
             commands::settings::set_prefix(),
+            commands::misc::roll_dice(),
+            commands::misc::random_teams(),
+            commands::misc::frank(),
+            commands::management::create_channel(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
-            dynamic_prefix: Some(|ctx| Box::pin(commands::settings::get_prefix(ctx))),
+            dynamic_prefix: Some(|ctx: PartialContext<'_>| Box::pin(commands::settings::get_prefix(ctx))),
             edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(
                 Duration::from_secs(3600),
             ))),
             ..Default::default()
         },
         // The global error handler for all error cases that may occur
-        on_error: |error| Box::pin(on_error(error)),
+        on_error: |error: poise::FrameworkError<'_, Data, Error>| Box::pin(on_error(error)),
         // This code is run before every command
-        pre_command: |ctx| {
+        pre_command: |ctx: Context<'_>| {
             Box::pin(async move {
                 println!(
                     "command {} executed by {} at {}",
@@ -120,7 +125,7 @@ async fn main() -> Result<(), Report> {
             })
         },
         // This code is run after a command if it was successful (returned Ok)
-        post_command: |ctx| {
+        post_command: |ctx: Context<'_>| {
             Box::pin(async move {
                 println!("{} command finished!", ctx.command().qualified_name);
 
@@ -128,7 +133,7 @@ async fn main() -> Result<(), Report> {
             })
         },
         // Every command invocation must pass this check to continue execution
-        command_check: Some(|ctx| {
+        command_check: Some(|ctx: Context<'_>| {
             Box::pin(async move {
                 if ctx.author().id == 123456789 {
                     return Ok(false);
@@ -139,9 +144,9 @@ async fn main() -> Result<(), Report> {
         // Enforce command checks even for owners (enforced by default)
         // Set to true to bypass checks, which is useful for testing
         skip_checks_for_owners: false,
-        event_handler: |_ctx, event, _framework, _data| {
+        event_handler: |ctx: &serenity::Context, event: &serenity::FullEvent, _framework: poise::FrameworkContext<'_, Data, Error>, data: &Data| {
             Box::pin(commands::event_handler::event_handler(
-                _ctx, event, _framework, _data,
+                ctx, event, _framework, data,
             ))
         },
         ..Default::default()
@@ -152,28 +157,40 @@ async fn main() -> Result<(), Report> {
             Box::pin(async move {
                 println!("Logged in as {}", _ready.user.name);
                 info!("logged in as {}", _ready.user.name);
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                
+                // If DEV_GUILD_ID is set in .env, register commands to that guild instantly.
+                // Otherwise, register them globally (takes up to 1 hour).
+                if let Ok(guild_id_str) = dotenvy::var("DEV_GUILD_ID") {
+                    let guild_id = serenity::GuildId::new(guild_id_str.parse()?);
+                    println!("Registering commands to guild {}...", guild_id);
+                    poise::builtins::register_in_guild(ctx, &framework.options().commands, guild_id).await?;
+                } else {
+                    println!("Registering commands globally...");
+                    poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                }
+
                 Ok(Data {
                     giphy_api: api,
                     superhero_api: super_api,
                     database,
-                    gardy_count: AtomicU32::new(0),
-                    luxe_count: AtomicU32::new(0),
                 })
             })
         })
         .options(options)
         .build();
 
-    let token = var("DISCORD_TOKEN").expect("Missing `DISCORD_TOKEN` env var");
+    let token = dotenvy::var("DISCORD_TOKEN").map_err(|e| Report::msg(format!("DISCORD_TOKEN must be set: {}", e)))?;
     let intents =
-        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
+        serenity::GatewayIntents::non_privileged() 
+        | serenity::GatewayIntents::MESSAGE_CONTENT
+        | serenity::GatewayIntents::GUILD_MEMBERS;
 
-    let client = serenity::ClientBuilder::new(token, intents)
+    let mut client = serenity::ClientBuilder::new(token, intents)
         .framework(framework)
-        .await;
+        .await
+        .map_err(|e| Report::msg(format!("Failed to create client: {}", e)))?;
 
-    client.unwrap().start().await.unwrap();
+    client.start().await.map_err(|e| Report::msg(format!("Failed to start client: {}", e)))?;
     Ok(())
 }
 

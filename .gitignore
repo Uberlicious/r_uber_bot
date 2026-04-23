@@ -2,3 +2,8 @@
 /bot/dbdata
 .env
 /.vscode
+
+
+# Added by cargo
+
+/target

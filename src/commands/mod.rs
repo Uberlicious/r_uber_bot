@@ -6,6 +6,8 @@
 
 pub mod age;
 pub mod event_handler;
+pub mod management;
+pub mod misc;
 pub mod role_assign;
 pub mod settings;
 pub mod superhero;
